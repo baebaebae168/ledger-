@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>記帳本</title>
+<title>記帳本 / 가계부</title>
 <style>
   .viz-root {
     color-scheme: light;
@@ -239,18 +239,57 @@
   }
   .toast.show { opacity: 1; transform: translateX(-50%) translateY(-6px); }
 
+  .gate {
+    position: fixed; inset: 0; z-index: 500;
+    background: var(--surface-2);
+    display: flex; align-items: center; justify-content: center;
+    padding: 20px;
+  }
+  .gate-box {
+    background: var(--card-bg); border: 1px solid var(--border);
+    border-radius: 16px; padding: 32px 28px; max-width: 320px; width: 100%;
+    box-shadow: 0 8px 30px rgba(46,42,34,0.12); text-align: center;
+  }
+  .gate-box .icon { font-size: 32px; margin-bottom: 10px; }
+  .gate-box h2 { margin: 0 0 6px; font-size: 17px; }
+  .gate-box p { margin: 0 0 18px; font-size: 13px; color: var(--text-muted); }
+  .gate-box input {
+    width: 100%; font-family: inherit; font-size: 18px; text-align: center;
+    letter-spacing: 4px; padding: 10px; border-radius: 10px;
+    border: 1px solid var(--border); background: var(--surface-1); color: var(--text-primary);
+    margin-bottom: 12px;
+  }
+  .gate-box input.shake { animation: gate-shake 0.35s; border-color: var(--critical); }
+  .gate-box button { width: 100%; padding: 10px; }
+  @keyframes gate-shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-6px); }
+    75% { transform: translateX(6px); }
+  }
 </style>
 </head>
 <body>
 <div class="viz-root">
 
+<div class="gate" id="gate">
+  <div class="gate-box">
+    <div class="icon">🔒</div>
+    <h2>記帳本 / 가계부</h2>
+    <p>請輸入密碼以繼續 / 비밀번호를 입력하세요</p>
+    <form id="gateForm">
+      <input type="password" id="gatePassword" inputmode="numeric" autocomplete="off" placeholder="••••" autofocus>
+      <button type="submit" class="primary">解鎖 / 잠금 해제</button>
+    </form>
+  </div>
+</div>
+
 <header class="topbar">
   <div class="topbar-inner">
-    <h1>📒 記帳本</h1>
+    <h1>📒 記帳本 / 가계부</h1>
     <div class="topbar-actions">
-      <button class="icon-btn" id="themeToggle" title="切換深色模式">🌙</button>
-      <button id="exportBtn" title="匯出完整備份 JSON（含分類與預算設定，可用於還原）">備份匯出</button>
-      <button id="importBtn" title="匯入備份 JSON 還原資料">備份匯入</button>
+      <button class="icon-btn" id="themeToggle" title="切換深色模式 / 다크 모드 전환">🌙</button>
+      <button id="exportBtn" title="匯出完整備份 JSON（含分類與預算設定，可用於還原） / 전체 백업 내보내기">備份匯出 / 백업 내보내기</button>
+      <button id="importBtn" title="匯入備份 JSON 還原資料 / 백업 JSON 가져오기">備份匯入 / 백업 가져오기</button>
       <input type="file" id="importFile" accept="application/json" style="display:none;">
     </div>
   </div>
@@ -258,10 +297,10 @@
 
 <div class="wrap">
   <nav class="tabs">
-    <button data-tab="dashboard" class="active">總覽</button>
-    <button data-tab="records">記錄</button>
-    <button data-tab="budget">預算</button>
-    <button data-tab="categories">分類設定</button>
+    <button data-tab="dashboard" class="active">總覽 / 개요</button>
+    <button data-tab="records">記錄 / 기록</button>
+    <button data-tab="budget">預算 / 예산</button>
+    <button data-tab="categories">分類設定 / 분류 설정</button>
   </nav>
 
   <!-- Dashboard -->
@@ -274,32 +313,32 @@
 
     <div class="stat-row">
       <div class="stat-tile income">
-        <div class="label">本月收入</div>
-        <div class="value" id="statIncome">NT$0</div>
+        <div class="label">本月收入 / 이번 달 수입</div>
+        <div class="value" id="statIncome">₩0</div>
       </div>
       <div class="stat-tile expense">
-        <div class="label">本月支出</div>
-        <div class="value" id="statExpense">NT$0</div>
+        <div class="label">本月支出 / 이번 달 지출</div>
+        <div class="value" id="statExpense">₩0</div>
       </div>
       <div class="stat-tile balance">
-        <div class="label">本月結餘</div>
-        <div class="value" id="statBalance">NT$0</div>
+        <div class="label">本月結餘 / 이번 달 잔액</div>
+        <div class="value" id="statBalance">₩0</div>
       </div>
     </div>
 
     <div class="grid-2">
       <div class="card">
-        <h2>本月支出分類</h2>
+        <h2>本月支出分類 / 이번 달 지출 분류</h2>
         <div id="donutContainer" class="donut-wrap"></div>
       </div>
       <div class="card">
-        <h2>近 6 個月收支趨勢</h2>
+        <h2>近 6 個月收支趨勢 / 최근 6개월 수입·지출 추이</h2>
         <div id="barContainer"></div>
       </div>
     </div>
 
     <div class="card" id="dashboardBudgetCard" style="display:none;">
-      <h2>預算狀況</h2>
+      <h2>預算狀況 / 예산 현황</h2>
       <div id="dashboardBudgetList"></div>
     </div>
   </section>
@@ -307,659 +346,61 @@
   <!-- Records -->
   <section class="panel" id="panel-records">
     <div class="card">
-      <h2 id="formTitle">新增紀錄</h2>
+      <h2 id="formTitle">新增紀錄 / 기록 추가</h2>
       <form class="tx-form" id="txForm">
         <div class="field wide">
-          <label>類型</label>
+          <label>類型 / 유형</label>
           <div class="type-toggle">
-            <button type="button" data-type="expense" class="on expense">支出</button>
-            <button type="button" data-type="income" class="income">收入</button>
+            <button type="button" data-type="expense" class="on expense">支出 / 지출</button>
+            <button type="button" data-type="income" class="income">收入 / 수입</button>
           </div>
         </div>
         <div class="field">
-          <label>金額 (NT$)</label>
+          <label>金額 (₩) / 금액 (₩)</label>
           <input type="number" id="txAmount" min="0" step="1" placeholder="0" required>
         </div>
         <div class="field">
-          <label>分類</label>
+          <label>分類 / 분류</label>
           <select id="txCategory" required></select>
         </div>
         <div class="field">
-          <label>日期</label>
+          <label>日期 / 날짜</label>
           <input type="date" id="txDate" required>
         </div>
         <div class="field wide">
-          <label>備註（選填）</label>
-          <input type="text" id="txNote" placeholder="例如：午餐、捷運">
+          <label>備註（選填） / 메모 (선택)</label>
+          <input type="text" id="txNote" placeholder="例如：午餐、捷運 / 예: 점심, 지하철">
         </div>
         <div class="field full" style="display:flex; gap:8px; justify-content:flex-end;">
-          <button type="button" id="cancelEditBtn" style="display:none;">取消編輯</button>
-          <button type="submit" class="primary" id="submitTxBtn">新增紀錄</button>
+          <button type="button" id="cancelEditBtn" style="display:none;">取消編輯 / 편집 취소</button>
+          <button type="submit" class="primary" id="submitTxBtn">新增紀錄 / 기록 추가</button>
         </div>
       </form>
     </div>
 
     <div class="card">
-      <h2>所有紀錄</h2>
+      <h2>所有紀錄 / 전체 기록</h2>
       <div class="filters">
         <select id="filterMonth"></select>
         <select id="filterType">
-          <option value="all">全部類型</option>
-          <option value="expense">支出</option>
-          <option value="income">收入</option>
+          <option value="all">全部類型 / 전체 유형</option>
+          <option value="expense">支出 / 지출</option>
+          <option value="income">收入 / 수입</option>
         </select>
-        <select id="filterCategory"><option value="all">全部分類</option></select>
+        <select id="filterCategory"><option value="all">全部分類 / 전체 분류</option></select>
       </div>
       <div style="overflow-x:auto;">
         <table>
           <thead>
-            <tr><th>日期</th><th>分類</th><th>備註</th><th style="text-align:right;">金額</th><th></th></tr>
+            <tr><th>日期 / 날짜</th><th>分類 / 분류</th><th>備註 / 메모</th><th style="text-align:right;">金額 / 금액</th><th></th></tr>
           </thead>
           <tbody id="txTableBody"></tbody>
         </table>
       </div>
-      <div class="empty-state" id="txEmptyState" style="display:none;">目前沒有符合條件的紀錄</div>
+      <div class="empty-state" id="txEmptyState" style="display:none;">目前沒有符合條件的紀錄 / 조건에 맞는 기록이 없습니다</div>
     </div>
   </section>
 
   <!-- Budget -->
   <section class="panel" id="panel-budget">
-    <div class="card">
-      <h2>本月支出分類預算</h2>
-      <p class="sub-note" style="margin-top:-6px;">為各支出分類設定每月預算金額，超支時會顯示提醒。設為 0 表示不設定。</p>
-      <div id="budgetList"></div>
-    </div>
-  </section>
-
-  <!-- Categories -->
-  <section class="panel" id="panel-categories">
-    <div class="card">
-      <h2>支出分類</h2>
-      <div class="cat-manage-list" id="expenseCatList"></div>
-      <div class="add-cat-form">
-        <input type="text" id="newExpenseCat" placeholder="新增支出分類名稱">
-        <button id="addExpenseCatBtn">新增</button>
-      </div>
-    </div>
-    <div class="card">
-      <h2>收入分類</h2>
-      <div class="cat-manage-list" id="incomeCatList"></div>
-      <div class="add-cat-form">
-        <input type="text" id="newIncomeCat" placeholder="新增收入分類名稱">
-        <button id="addIncomeCatBtn">新增</button>
-      </div>
-    </div>
-  </section>
-
-  <footer class="hint">資料儲存在此瀏覽器（localStorage），僅限本機使用。建議定期使用「匯出」備份資料。</footer>
-</div>
-
-<div class="tooltip" id="tooltip"></div>
-<div class="toast" id="toast"></div>
-
-</div>
-
-</script>
-<script>
-(function(){
-  "use strict";
-
-  var STORAGE_KEY = "ledger_v1_state";
-  var SLOTS = ["--series-1","--series-2","--series-3","--series-4","--series-5","--series-6","--series-7","--series-8"];
-
-  var DEFAULT_STATE = {
-    transactions: [],
-    categories: {
-      expense: ["餐飲","交通","購物","娛樂","居家","醫療","教育","其他"],
-      income: ["薪資","獎金","投資","其他收入"]
-    },
-    budgets: {},
-    theme: "system"
-  };
-
-  var state = loadState();
-  var currentMonth = new Date(); currentMonth.setDate(1);
-  var editingId = null;
-  var currentType = "expense";
-
-  function loadState(){
-    try {
-      var raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) return JSON.parse(JSON.stringify(DEFAULT_STATE));
-      var parsed = JSON.parse(raw);
-      // shallow-merge to be safe against missing fields
-      return Object.assign({}, DEFAULT_STATE, parsed, {
-        categories: Object.assign({}, DEFAULT_STATE.categories, parsed.categories || {}),
-        budgets: parsed.budgets || {}
-      });
-    } catch(e){
-      console.warn("讀取本機資料失敗，使用預設值", e);
-      return JSON.parse(JSON.stringify(DEFAULT_STATE));
-    }
-  }
-  function saveState(){
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-  }
-
-  function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,8); }
-  function fmtMoney(n){
-    var v = Math.round(n || 0);
-    return "NT$" + v.toLocaleString("zh-Hant-TW");
-  }
-  function monthKey(d){ return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0"); }
-  function txMonthKey(tx){ return tx.date.slice(0,7); }
-  function monthLabel(d){ return d.getFullYear() + "年" + (d.getMonth()+1) + "月"; }
-
-  // stable color assignment: every category name (across expense+income, in first-seen order) gets a fixed slot
-  function allCategoryColorOrder(){
-    var order = [];
-    state.categories.expense.forEach(function(c){ if(order.indexOf(c)===-1) order.push(c); });
-    state.categories.income.forEach(function(c){ if(order.indexOf(c)===-1) order.push(c); });
-    return order;
-  }
-  function categoryColorVar(name){
-    var order = allCategoryColorOrder();
-    var idx = order.indexOf(name);
-    if (idx === -1) idx = 0;
-    return SLOTS[idx % SLOTS.length];
-  }
-  function cssVar(varName){
-    return getComputedStyle(document.querySelector(".viz-root")).getPropertyValue(varName).trim();
-  }
-
-  function showToast(msg){
-    var t = document.getElementById("toast");
-    t.textContent = msg;
-    t.classList.add("show");
-    clearTimeout(showToast._tm);
-    showToast._tm = setTimeout(function(){ t.classList.remove("show"); }, 1800);
-  }
-
-  // ---------- Tabs ----------
-  document.querySelectorAll("nav.tabs button").forEach(function(btn){
-    btn.addEventListener("click", function(){
-      document.querySelectorAll("nav.tabs button").forEach(function(b){ b.classList.remove("active"); });
-      document.querySelectorAll(".panel").forEach(function(p){ p.classList.remove("active"); });
-      btn.classList.add("active");
-      document.getElementById("panel-" + btn.dataset.tab).classList.add("active");
-      if (btn.dataset.tab === "records") renderFilterOptions();
-    });
-  });
-
-  // ---------- Theme ----------
-  function applyTheme(){
-    var root = document.documentElement;
-    if (state.theme === "dark") { root.setAttribute("data-theme","dark"); document.getElementById("themeToggle").textContent = "☀️"; }
-    else if (state.theme === "light") { root.setAttribute("data-theme","light"); document.getElementById("themeToggle").textContent = "🌙"; }
-    else { root.removeAttribute("data-theme"); document.getElementById("themeToggle").textContent = "🌓"; }
-  }
-  document.getElementById("themeToggle").addEventListener("click", function(){
-    state.theme = state.theme === "dark" ? "light" : (state.theme === "light" ? "system" : "dark");
-    applyTheme(); saveState(); renderAll();
-  });
-
-  // ---------- Month nav ----------
-  document.getElementById("prevMonth").addEventListener("click", function(){
-    currentMonth.setMonth(currentMonth.getMonth()-1); renderDashboard();
-  });
-  document.getElementById("nextMonth").addEventListener("click", function(){
-    currentMonth.setMonth(currentMonth.getMonth()+1); renderDashboard();
-  });
-
-  // ---------- Export / Import ----------
-  document.getElementById("exportBtn").addEventListener("click", function(){
-    var blob = new Blob([JSON.stringify(state, null, 2)], {type:"application/json"});
-    var url = URL.createObjectURL(blob);
-    var a = document.createElement("a");
-    var d = new Date();
-    a.href = url;
-    a.download = "記帳備份_" + d.toISOString().slice(0,10) + ".json";
-    document.body.appendChild(a); a.click(); document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    showToast("已匯出備份檔案");
-  });
-  document.getElementById("importBtn").addEventListener("click", function(){
-    document.getElementById("importFile").click();
-  });
-  document.getElementById("importFile").addEventListener("change", function(e){
-    var file = e.target.files[0];
-    if (!file) return;
-    var reader = new FileReader();
-    reader.onload = function(ev){
-      try {
-        var data = JSON.parse(ev.target.result);
-        if (!data || !Array.isArray(data.transactions)) throw new Error("格式不正確");
-        if (!confirm("匯入將會覆蓋目前所有本機資料，確定要繼續嗎？")) return;
-        state = Object.assign({}, DEFAULT_STATE, data, {
-          categories: Object.assign({}, DEFAULT_STATE.categories, data.categories || {}),
-          budgets: data.budgets || {}
-        });
-        saveState(); applyTheme(); renderAll();
-        showToast("匯入成功");
-      } catch(err){
-        alert("匯入失敗：檔案格式不正確");
-      }
-    };
-    reader.readAsText(file);
-    e.target.value = "";
-  });
-
-  // ---------- Transaction form ----------
-  document.querySelectorAll(".type-toggle button").forEach(function(btn){
-    btn.addEventListener("click", function(){
-      currentType = btn.dataset.type;
-      document.querySelectorAll(".type-toggle button").forEach(function(b){ b.classList.remove("on"); });
-      btn.classList.add("on");
-      populateCategorySelect();
-    });
-  });
-
-  function populateCategorySelect(){
-    var sel = document.getElementById("txCategory");
-    var list = state.categories[currentType];
-    sel.innerHTML = list.map(function(c){ return '<option value="'+esc(c)+'">'+esc(c)+'</option>'; }).join("");
-  }
-  function esc(s){ return String(s).replace(/[&<>"']/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
-
-  document.getElementById("txForm").addEventListener("submit", function(e){
-    e.preventDefault();
-    var amount = parseFloat(document.getElementById("txAmount").value);
-    var category = document.getElementById("txCategory").value;
-    var date = document.getElementById("txDate").value;
-    var note = document.getElementById("txNote").value.trim();
-    if (!amount || amount <= 0 || !date) { showToast("請輸入正確的金額與日期"); return; }
-
-    if (editingId) {
-      var tx = state.transactions.find(function(t){ return t.id === editingId; });
-      if (tx) { tx.type = currentType; tx.amount = amount; tx.category = category; tx.date = date; tx.note = note; }
-      showToast("已更新紀錄");
-    } else {
-      state.transactions.push({ id: uid(), type: currentType, amount: amount, category: category, date: date, note: note });
-      showToast("已新增紀錄");
-    }
-    saveState();
-    resetForm();
-    renderAll();
-  });
-
-  document.getElementById("cancelEditBtn").addEventListener("click", resetForm);
-
-  function resetForm(){
-    editingId = null;
-    document.getElementById("txForm").reset();
-    document.getElementById("txDate").value = new Date().toISOString().slice(0,10);
-    document.getElementById("formTitle").textContent = "新增紀錄";
-    document.getElementById("submitTxBtn").textContent = "新增紀錄";
-    document.getElementById("cancelEditBtn").style.display = "none";
-    currentType = "expense";
-    document.querySelectorAll(".type-toggle button").forEach(function(b){ b.classList.toggle("on", b.dataset.type === "expense"); });
-    populateCategorySelect();
-  }
-
-  function startEdit(id){
-    var tx = state.transactions.find(function(t){ return t.id === id; });
-    if (!tx) return;
-    editingId = id;
-    currentType = tx.type;
-    document.querySelectorAll(".type-toggle button").forEach(function(b){ b.classList.toggle("on", b.dataset.type === tx.type); });
-    populateCategorySelect();
-    document.getElementById("txAmount").value = tx.amount;
-    document.getElementById("txCategory").value = tx.category;
-    document.getElementById("txDate").value = tx.date;
-    document.getElementById("txNote").value = tx.note || "";
-    document.getElementById("formTitle").textContent = "編輯紀錄";
-    document.getElementById("submitTxBtn").textContent = "儲存變更";
-    document.getElementById("cancelEditBtn").style.display = "";
-    document.querySelector('nav.tabs button[data-tab="records"]').click();
-    window.scrollTo({top:0, behavior:"smooth"});
-  }
-
-  function deleteTx(id){
-    if (!confirm("確定要刪除這筆紀錄嗎？")) return;
-    state.transactions = state.transactions.filter(function(t){ return t.id !== id; });
-    saveState(); renderAll();
-  }
-
-  // ---------- Filters & table ----------
-  function renderFilterOptions(){
-    var months = Array.from(new Set(state.transactions.map(txMonthKey))).sort().reverse();
-    var filterMonth = document.getElementById("filterMonth");
-    var prevVal = filterMonth.value || "all";
-    filterMonth.innerHTML = '<option value="all">全部月份</option>' + months.map(function(m){
-      var parts = m.split("-");
-      return '<option value="'+m+'">'+parts[0]+"年"+parseInt(parts[1],10)+"月"+'</option>';
-    }).join("");
-    if (Array.from(filterMonth.options).some(function(o){return o.value===prevVal;})) filterMonth.value = prevVal;
-
-    var filterCat = document.getElementById("filterCategory");
-    var prevCat = filterCat.value || "all";
-    var allCats = allCategoryColorOrder();
-    filterCat.innerHTML = '<option value="all">全部分類</option>' + allCats.map(function(c){ return '<option value="'+esc(c)+'">'+esc(c)+'</option>'; }).join("");
-    if (Array.from(filterCat.options).some(function(o){return o.value===prevCat;})) filterCat.value = prevCat;
-  }
-  ["filterMonth","filterType","filterCategory"].forEach(function(id){
-    document.getElementById(id).addEventListener("change", renderTable);
-  });
-
-  function renderTable(){
-    var fm = document.getElementById("filterMonth").value;
-    var ft = document.getElementById("filterType").value;
-    var fc = document.getElementById("filterCategory").value;
-    var rows = state.transactions.filter(function(t){
-      if (fm !== "all" && txMonthKey(t) !== fm) return false;
-      if (ft !== "all" && t.type !== ft) return false;
-      if (fc !== "all" && t.category !== fc) return false;
-      return true;
-    }).sort(function(a,b){ return b.date.localeCompare(a.date) || b.id.localeCompare(a.id); });
-
-    var tbody = document.getElementById("txTableBody");
-    document.getElementById("txEmptyState").style.display = rows.length ? "none" : "";
-    tbody.innerHTML = rows.map(function(t){
-      var color = cssVar(categoryColorVar(t.category));
-      return '<tr>' +
-        '<td>'+t.date+'</td>' +
-        '<td><span class="cat-pill"><span class="swatch" style="background:'+color+'"></span>'+esc(t.category)+'</span></td>' +
-        '<td>'+esc(t.note || "")+'</td>' +
-        '<td class="amt '+t.type+'">'+(t.type==="expense"?"-":"+")+fmtMoney(t.amount)+'</td>' +
-        '<td><div class="row-actions">' +
-          '<button data-edit="'+t.id+'" title="編輯">✏️</button>' +
-          '<button data-del="'+t.id+'" class="danger" title="刪除">🗑️</button>' +
-        '</div></td>' +
-      '</tr>';
-    }).join("");
-    tbody.querySelectorAll("[data-edit]").forEach(function(b){ b.addEventListener("click", function(){ startEdit(b.dataset.edit); }); });
-    tbody.querySelectorAll("[data-del]").forEach(function(b){ b.addEventListener("click", function(){ deleteTx(b.dataset.del); }); });
-  }
-
-  // ---------- Categories management ----------
-  function renderCategoryLists(){
-    ["expense","income"].forEach(function(type){
-      var el = document.getElementById(type === "expense" ? "expenseCatList" : "incomeCatList");
-      var list = state.categories[type];
-      el.innerHTML = list.map(function(c){
-        var color = cssVar(categoryColorVar(c));
-        var inUse = state.transactions.some(function(t){ return t.type===type && t.category===c; });
-        var hasBudget = type==="expense" && state.budgets[c];
-        var disabled = inUse || hasBudget;
-        return '<div class="cat-manage-row">' +
-          '<span class="swatch" style="background:'+color+'"></span>' +
-          '<span class="name">'+esc(c)+'</span>' +
-          (disabled ? '<span class="sub-note">使用中</span>' : '<button data-del-cat="'+type+'::'+esc(c)+'" class="danger" title="刪除">刪除</button>') +
-        '</div>';
-      }).join("");
-    });
-    document.querySelectorAll("[data-del-cat]").forEach(function(b){
-      b.addEventListener("click", function(){
-        var parts = b.dataset.delCat.split("::");
-        var type = parts[0], name = parts[1];
-        state.categories[type] = state.categories[type].filter(function(c){ return c !== name; });
-        saveState(); renderAll();
-      });
-    });
-  }
-  document.getElementById("addExpenseCatBtn").addEventListener("click", function(){ addCategory("expense"); });
-  document.getElementById("addIncomeCatBtn").addEventListener("click", function(){ addCategory("income"); });
-  function addCategory(type){
-    var input = document.getElementById(type === "expense" ? "newExpenseCat" : "newIncomeCat");
-    var name = input.value.trim();
-    if (!name) return;
-    if (state.categories[type].indexOf(name) !== -1) { showToast("此分類已存在"); return; }
-    state.categories[type].push(name);
-    input.value = "";
-    saveState(); renderAll();
-  }
-
-  // ---------- Budget ----------
-  function monthSpendByCategory(mKey){
-    var map = {};
-    state.transactions.forEach(function(t){
-      if (t.type === "expense" && txMonthKey(t) === mKey) {
-        map[t.category] = (map[t.category] || 0) + t.amount;
-      }
-    });
-    return map;
-  }
-  function statusForPct(pct){
-    if (pct >= 100) return { color: "var(--critical)", icon: "✗", label: "已超支" };
-    if (pct >= 80) return { color: "var(--warning)", icon: "!", label: "接近上限" };
-    return { color: "var(--good)", icon: "✓", label: "正常" };
-  }
-
-  function renderBudgetPanel(){
-    var mKey = monthKey(currentMonth);
-    var spend = monthSpendByCategory(mKey);
-    var list = document.getElementById("budgetList");
-    list.innerHTML = state.categories.expense.map(function(c){
-      var budget = state.budgets[c] || 0;
-      var spent = spend[c] || 0;
-      var pct = budget > 0 ? Math.min(999, (spent/budget)*100) : 0;
-      var st = statusForPct(pct);
-      var fillPct = Math.min(100, pct);
-      return '<div class="budget-row">' +
-        '<div class="budget-head">' +
-          '<span>'+esc(c)+'</span>' +
-          (budget > 0 ? '<span class="status-badge" style="color:'+st.color+'">'+st.icon+' '+st.label+'</span>' : '<span class="sub-note">未設定</span>') +
-        '</div>' +
-        (budget > 0 ? (
-          '<div class="progress-track"><div class="progress-fill" style="width:'+fillPct+'%; background:'+st.color+'"></div></div>' +
-          '<div class="sub-note">已花費 '+fmtMoney(spent)+' / 預算 '+fmtMoney(budget)+'（'+Math.round(pct)+'%）</div>'
-        ) : '') +
-        '<div class="budget-input-row">' +
-          '<input type="number" min="0" step="100" placeholder="設定月預算" value="'+(budget||"")+'" data-budget-input="'+esc(c)+'">' +
-          '<button data-budget-save="'+esc(c)+'">儲存</button>' +
-        '</div>' +
-      '</div>';
-    }).join("");
-    list.querySelectorAll("[data-budget-save]").forEach(function(b){
-      b.addEventListener("click", function(){
-        var cat = b.dataset.budgetSave;
-        var input = list.querySelector('[data-budget-input="'+CSS.escape(cat)+'"]');
-        var v = parseFloat(input.value) || 0;
-        if (v > 0) state.budgets[cat] = v; else delete state.budgets[cat];
-        saveState(); renderAll();
-        showToast("已儲存預算設定");
-      });
-    });
-
-    // dashboard mini budget list (only categories with budget set)
-    var dashCard = document.getElementById("dashboardBudgetCard");
-    var dashList = document.getElementById("dashboardBudgetList");
-    var withBudget = state.categories.expense.filter(function(c){ return state.budgets[c] > 0; });
-    if (withBudget.length === 0) { dashCard.style.display = "none"; }
-    else {
-      dashCard.style.display = "";
-      dashList.innerHTML = withBudget.map(function(c){
-        var budget = state.budgets[c];
-        var spent = spend[c] || 0;
-        var pct = Math.min(999, (spent/budget)*100);
-        var st = statusForPct(pct);
-        var fillPct = Math.min(100, pct);
-        return '<div class="budget-row">' +
-          '<div class="budget-head"><span>'+esc(c)+'</span><span class="status-badge" style="color:'+st.color+'">'+st.icon+' '+st.label+'</span></div>' +
-          '<div class="progress-track"><div class="progress-fill" style="width:'+fillPct+'%; background:'+st.color+'"></div></div>' +
-          '<div class="sub-note">已花費 '+fmtMoney(spent)+' / 預算 '+fmtMoney(budget)+'（'+Math.round(pct)+'%）</div>' +
-        '</div>';
-      }).join("");
-    }
-  }
-
-  // ---------- Tooltip helper ----------
-  var tooltipEl = document.getElementById("tooltip");
-  function showTooltip(evt, html){
-    tooltipEl.innerHTML = html;
-    tooltipEl.style.left = evt.clientX + "px";
-    tooltipEl.style.top = evt.clientY + "px";
-    tooltipEl.classList.add("show");
-  }
-  function moveTooltip(evt){
-    tooltipEl.style.left = evt.clientX + "px";
-    tooltipEl.style.top = evt.clientY + "px";
-  }
-  function hideTooltip(){ tooltipEl.classList.remove("show"); }
-
-  // ---------- Donut chart ----------
-  function renderDonut(){
-    var mKey = monthKey(currentMonth);
-    var spend = {};
-    var total = 0;
-    state.transactions.forEach(function(t){
-      if (t.type === "expense" && txMonthKey(t) === mKey) {
-        spend[t.category] = (spend[t.category] || 0) + t.amount;
-        total += t.amount;
-      }
-    });
-    var container = document.getElementById("donutContainer");
-    var cats = Object.keys(spend).sort(function(a,b){ return spend[b]-spend[a]; });
-    if (total === 0 || cats.length === 0) {
-      container.innerHTML = '<div class="donut-empty">本月尚無支出紀錄</div>';
-      return;
-    }
-
-    var size = 200, r = 74, cx = size/2, cy = size/2, sw = 26;
-    var circumference = 2 * Math.PI * r;
-    var gapDeg = 2.2; // visual gap between segments in degrees
-    var segs = [];
-    var cum = 0;
-    cats.forEach(function(c){
-      var pct = spend[c] / total;
-      segs.push({ cat: c, value: spend[c], pct: pct, start: cum });
-      cum += pct;
-    });
-
-    var svgParts = [];
-    segs.forEach(function(s){
-      var startAngle = s.start * 360 + gapDeg/2;
-      var sweep = s.pct * 360 - gapDeg;
-      if (sweep < 0) sweep = 0;
-      var color = cssVar(categoryColorVar(s.cat));
-      var dash = (sweep/360) * circumference;
-      var gap = circumference - dash;
-      var rotate = startAngle - 90;
-      svgParts.push('<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="none" stroke="'+color+'" stroke-width="'+sw+'" ' +
-        'stroke-dasharray="'+dash+' '+gap+'" transform="rotate('+rotate+' '+cx+' '+cy+')" ' +
-        'data-cat="'+esc(s.cat)+'" data-val="'+s.value+'" data-pct="'+(s.pct*100).toFixed(1)+'" class="donut-seg" style="cursor:pointer;"/>');
-    });
-
-    var svg = '<svg viewBox="0 0 '+size+' '+size+'" width="220" height="220">' +
-      svgParts.join("") +
-      '<text x="'+cx+'" y="'+(cy-6)+'" text-anchor="middle" font-size="13" fill="var(--text-muted)">本月支出</text>' +
-      '<text x="'+cx+'" y="'+(cy+16)+'" text-anchor="middle" font-size="17" font-weight="700" fill="var(--text-primary)">'+fmtMoney(total)+'</text>' +
-      '</svg>';
-
-    var legend = '<div class="legend">' + segs.map(function(s){
-      var color = cssVar(categoryColorVar(s.cat));
-      return '<div class="legend-item"><span class="swatch" style="background:'+color+'"></span>' + esc(s.cat) + '　' + fmtMoney(s.value) + '（'+(s.pct*100).toFixed(0)+'%）</div>';
-    }).join("") + '</div>';
-
-    container.innerHTML = svg + legend;
-    container.querySelectorAll(".donut-seg").forEach(function(seg){
-      seg.addEventListener("mousemove", function(e){
-        showTooltip(e, '<b>'+esc(seg.dataset.cat)+'</b><br>'+fmtMoney(seg.dataset.val)+'（'+seg.dataset.pct+'%）');
-      });
-      seg.addEventListener("mouseleave", hideTooltip);
-    });
-  }
-
-  // ---------- Bar chart (6-month trend) ----------
-  function renderBarChart(){
-    var months = [];
-    for (var i = 5; i >= 0; i--) {
-      var d = new Date(currentMonth.getFullYear(), currentMonth.getMonth() - i, 1);
-      months.push(d);
-    }
-    var data = months.map(function(d){
-      var mKey = monthKey(d);
-      var inc = 0, exp = 0;
-      state.transactions.forEach(function(t){
-        if (txMonthKey(t) === mKey) { if (t.type==="income") inc += t.amount; else exp += t.amount; }
-      });
-      return { label: (d.getMonth()+1) + "月", income: inc, expense: exp };
-    });
-
-    var maxVal = Math.max(1, Math.max.apply(null, data.map(function(d){ return Math.max(d.income, d.expense); })));
-    var w = 320, h = 200, padL = 4, padB = 22, padT = 10, padR = 4;
-    var plotW = w - padL - padR, plotH = h - padT - padB;
-    var groupW = plotW / data.length;
-    var barW = Math.min(16, groupW * 0.3);
-    var gap = 3;
-
-    var gridLines = [];
-    for (var g=0; g<=3; g++){
-      var y = padT + plotH - (g/3)*plotH;
-      gridLines.push('<line x1="'+padL+'" y1="'+y+'" x2="'+(w-padR)+'" y2="'+y+'" stroke="var(--gridline)" stroke-width="1"/>');
-    }
-
-    var bars = [], labels = [];
-    var incomeColor = cssVar("--series-1"), expenseColor = cssVar("--series-2");
-    data.forEach(function(d, idx){
-      var gx = padL + idx*groupW + groupW/2;
-      var incH = (d.income/maxVal) * plotH;
-      var expH = (d.expense/maxVal) * plotH;
-      var incX = gx - barW - gap/2;
-      var expX = gx + gap/2;
-      bars.push('<rect x="'+incX+'" y="'+(padT+plotH-incH)+'" width="'+barW+'" height="'+Math.max(incH,0)+'" rx="3" fill="'+incomeColor+'" class="bar-el" data-label="'+esc(d.label)+' 收入" data-val="'+d.income+'"/>');
-      bars.push('<rect x="'+expX+'" y="'+(padT+plotH-expH)+'" width="'+barW+'" height="'+Math.max(expH,0)+'" rx="3" fill="'+expenseColor+'" class="bar-el" data-label="'+esc(d.label)+' 支出" data-val="'+d.expense+'"/>');
-      labels.push('<text x="'+gx+'" y="'+(h-6)+'" text-anchor="middle" font-size="10.5" fill="var(--text-muted)">'+d.label+'</text>');
-    });
-
-    var svg = '<svg viewBox="0 0 '+w+' '+h+'" width="100%" style="max-width:340px; display:block; margin:0 auto;">' +
-      gridLines.join("") +
-      '<line x1="'+padL+'" y1="'+(padT+plotH)+'" x2="'+(w-padR)+'" y2="'+(padT+plotH)+'" stroke="var(--baseline)" stroke-width="1"/>' +
-      bars.join("") + labels.join("") +
-      '</svg>';
-
-    var legend = '<div class="legend">' +
-      '<div class="legend-item"><span class="swatch" style="background:'+incomeColor+'"></span>收入</div>' +
-      '<div class="legend-item"><span class="swatch" style="background:'+expenseColor+'"></span>支出</div>' +
-      '</div>';
-
-    var container = document.getElementById("barContainer");
-    container.innerHTML = svg + legend;
-    container.querySelectorAll(".bar-el").forEach(function(bar){
-      bar.style.cursor = "pointer";
-      bar.addEventListener("mousemove", function(e){
-        showTooltip(e, '<b>'+bar.dataset.label+'</b><br>'+fmtMoney(bar.dataset.val));
-      });
-      bar.addEventListener("mouseleave", hideTooltip);
-    });
-  }
-
-  // ---------- Dashboard summary ----------
-  function renderDashboard(){
-    document.getElementById("monthLabel").textContent = monthLabel(currentMonth);
-    var mKey = monthKey(currentMonth);
-    var inc = 0, exp = 0;
-    state.transactions.forEach(function(t){
-      if (txMonthKey(t) === mKey) { if (t.type==="income") inc += t.amount; else exp += t.amount; }
-    });
-    document.getElementById("statIncome").textContent = fmtMoney(inc);
-    document.getElementById("statExpense").textContent = fmtMoney(exp);
-    var bal = inc - exp;
-    var balEl = document.getElementById("statBalance");
-    balEl.textContent = (bal >= 0 ? "+" : "") + fmtMoney(bal);
-    balEl.classList.toggle("pos", bal >= 0);
-    balEl.classList.toggle("neg", bal < 0);
-
-    renderDonut();
-    renderBarChart();
-    renderBudgetPanel();
-  }
-
-  function renderAll(){
-    populateCategorySelect();
-    renderDashboard();
-    renderFilterOptions();
-    renderTable();
-    renderCategoryLists();
-  }
-
-  // ---------- init ----------
-  applyTheme();
-  document.getElementById("txDate").value = new Date().toISOString().slice(0,10);
-  populateCategorySelect();
-  renderAll();
-
-})();
-</script>
-</body>
-</html>
+    <div
