@@ -266,6 +266,29 @@
     25% { transform: translateX(-6px); }
     75% { transform: translateX(6px); }
   }
+
+  .sync-modal {
+    display: none; position: fixed; inset: 0; z-index: 400;
+    background: rgba(30,25,17,0.45);
+    align-items: center; justify-content: center;
+    padding: 20px;
+  }
+  .sync-modal.show { display: flex; }
+  .sync-box {
+    background: var(--card-bg); border: 1px solid var(--border);
+    border-radius: 16px; padding: 24px 22px; max-width: 380px; width: 100%;
+    box-shadow: 0 8px 30px rgba(46,42,34,0.12);
+  }
+  .sync-box h2 { margin: 0 0 6px; font-size: 16px; }
+  .sync-box p { margin: 0 0 14px; font-size: 12.5px; color: var(--text-muted); line-height: 1.5; }
+  .sync-box label { font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 4px; }
+  .sync-box input[type="text"] {
+    width: 100%; font-family: inherit; font-size: 13px; padding: 8px 9px;
+    border: 1px solid var(--border); border-radius: 8px;
+    background: var(--surface-1); color: var(--text-primary); margin-bottom: 10px;
+  }
+  .sync-box .sync-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 6px; flex-wrap: wrap; }
+  .sync-status { font-size: 12px; color: var(--text-muted); min-height: 16px; }
 </style>
 </head>
 <body>
@@ -288,6 +311,7 @@
     <h1>📒 記帳本 / 가계부</h1>
     <div class="topbar-actions">
       <button class="icon-btn" id="themeToggle" title="切換深色模式 / 다크 모드 전환">🌙</button>
+      <button class="icon-btn" id="syncSettingsBtn" title="Google 試算表同步設定 / 구글 시트 동기화 설정">🔄</button>
       <button id="exportBtn" title="匯出完整備份 JSON（含分類與預算設定，可用於還原） / 전체 백업 내보내기">備份匯出 / 백업 내보내기</button>
       <button id="importBtn" title="匯入備份 JSON 還原資料 / 백업 JSON 가져오기">備份匯入 / 백업 가져오기</button>
       <input type="file" id="importFile" accept="application/json" style="display:none;">
@@ -436,6 +460,21 @@
 <div class="tooltip" id="tooltip"></div>
 <div class="toast" id="toast"></div>
 
+<div class="sync-modal" id="syncModal">
+  <div class="sync-box">
+    <h2>Google 試算表同步 / 구글 시트 동기화</h2>
+    <p>貼上 Apps Script 網頁應用程式網址，之後新增、編輯或刪除紀錄時會自動把目前所有紀錄同步到你的 Google 試算表。 / Apps Script 웹 앱 URL을 붙여넣으면 기록을 추가·수정·삭제할 때마다 전체 기록이 자동으로 Google 시트에 동기화됩니다.</p>
+    <label>Web App 網址 / 웹 앱 URL</label>
+    <input type="text" id="syncUrlInput" placeholder="https://script.google.com/macros/s/xxx/exec">
+    <div class="sync-status" id="syncStatus"></div>
+    <div class="sync-actions">
+      <button id="syncCloseBtn">關閉 / 닫기</button>
+      <button id="syncNowBtn">立即同步 / 지금 동기화</button>
+      <button class="primary" id="syncSaveBtn">儲存 / 저장</button>
+    </div>
+  </div>
+</div>
+
 </div>
 
 </script>
@@ -478,6 +517,7 @@
   }
   function saveState(){
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    scheduleSync();
   }
 
   function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,8); }
@@ -991,6 +1031,64 @@
     renderTable();
     renderCategoryLists();
   }
+
+  // ---------- Google Sheets sync ----------
+  // Optional: paste a Google Apps Script Web App URL and every add/edit/delete
+  // will push the full transaction list to a Google Sheet in your Drive.
+  var SYNC_KEY = "ledger_sync_url";
+  var syncTimer = null;
+
+  function getSyncUrl(){ return localStorage.getItem(SYNC_KEY) || ""; }
+  function setSyncStatus(msg){
+    var el = document.getElementById("syncStatus");
+    if (el) el.textContent = msg;
+  }
+  function scheduleSync(){
+    var url = getSyncUrl();
+    if (!url) return;
+    clearTimeout(syncTimer);
+    syncTimer = setTimeout(function(){ doSync(url); }, 1200);
+  }
+  function doSync(url){
+    url = url || getSyncUrl();
+    if (!url) { setSyncStatus("尚未設定網址 / URL이 설정되지 않음"); return; }
+    var payload = {
+      transactions: state.transactions.slice().sort(function(a,b){ return a.date.localeCompare(b.date); })
+    };
+    fetch(url, {
+      method: "POST",
+      mode: "no-cors",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify(payload)
+    }).then(function(){
+      var now = new Date();
+      setSyncStatus("已送出同步（" + now.toLocaleTimeString("ko-KR") + "）／請到 Google 試算表確認 / 동기화 전송됨 · Google 시트에서 확인하세요");
+    }).catch(function(){
+      setSyncStatus("同步失敗，請確認網址是否正確 / 동기화 실패, URL을 확인하세요");
+    });
+  }
+  document.getElementById("syncSettingsBtn").addEventListener("click", function(){
+    document.getElementById("syncUrlInput").value = getSyncUrl();
+    setSyncStatus("");
+    document.getElementById("syncModal").classList.add("show");
+  });
+  document.getElementById("syncCloseBtn").addEventListener("click", function(){
+    document.getElementById("syncModal").classList.remove("show");
+  });
+  document.getElementById("syncModal").addEventListener("click", function(e){
+    if (e.target.id === "syncModal") document.getElementById("syncModal").classList.remove("show");
+  });
+  document.getElementById("syncSaveBtn").addEventListener("click", function(){
+    var v = document.getElementById("syncUrlInput").value.trim();
+    localStorage.setItem(SYNC_KEY, v);
+    setSyncStatus(v ? "已儲存網址 / URL 저장됨" : "已清空網址 / URL 삭제됨");
+  });
+  document.getElementById("syncNowBtn").addEventListener("click", function(){
+    var v = document.getElementById("syncUrlInput").value.trim();
+    if (v) localStorage.setItem(SYNC_KEY, v);
+    setSyncStatus("同步中… / 동기화 중…");
+    doSync(v);
+  });
 
   // ---------- Password gate ----------
   // Note: this is a light deterrent only (the password is visible to anyone who views
